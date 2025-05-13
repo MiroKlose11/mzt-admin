@@ -8,7 +8,7 @@ const FileAPI = {
    */
   upload(formData: FormData) {
     return request<any, FileInfo>({
-      url: "/api/v1/files",
+      url: "/api/files",
       method: "post",
       data: formData,
       headers: {
@@ -24,7 +24,7 @@ const FileAPI = {
     const formData = new FormData();
     formData.append("file", file);
     return request<any, FileInfo>({
-      url: "/api/v1/files",
+      url: "/api/files",
       method: "post",
       data: formData,
       headers: {
@@ -40,7 +40,7 @@ const FileAPI = {
    */
   delete(filePath?: string) {
     return request({
-      url: "/api/v1/files",
+      url: "/api/files",
       method: "delete",
       params: { filePath: filePath },
     });
