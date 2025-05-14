@@ -1,15 +1,13 @@
 import { LayoutMode, ComponentSize, SidebarColor, ThemeMode, LanguageEnum } from "./enums";
 
-const { pkg } = __APP_INFO__;
-
 // 检查用户的操作系统是否使用深色模式
 const mediaQueryList = window.matchMedia("(prefers-color-scheme: dark)");
 
 const defaultSettings: AppSettings = {
   // 系统Title
-  title: pkg.name,
+  title: "美职通平台后台管理系统",
   // 系统版本
-  version: pkg.version,
+  version: "1.0.0",
   // 是否显示设置
   showSettings: true,
   // 是否显示标签视图
@@ -29,7 +27,7 @@ const defaultSettings: AppSettings = {
   // 是否开启水印
   watermarkEnabled: false,
   // 水印内容
-  watermarkContent: pkg.name,
+  watermarkContent: "美职通平台",
   // 侧边栏配色方案
   sidebarColorScheme: SidebarColor.CLASSIC_BLUE,
 };

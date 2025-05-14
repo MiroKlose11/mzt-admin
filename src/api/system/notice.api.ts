@@ -1,6 +1,6 @@
 import request from "@/utils/request";
 
-const NOTICE_BASE_URL = "/api/notices";
+const NOTICE_BASE_URL = "/notices";
 
 const NoticeAPI = {
   /** 获取通知公告分页数据 */

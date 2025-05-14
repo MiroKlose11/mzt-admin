@@ -1,6 +1,6 @@
 import request from "@/utils/request";
 
-const LOG_BASE_URL = "/api/logs";
+const LOG_BASE_URL = "/logs";
 
 const LogAPI = {
   /**

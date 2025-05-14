@@ -1,9 +1,15 @@
 <template>
   <div>
-    <h3 text-center m-0 mb-20px>{{ t("login.login") }}</h3>
-    <el-form ref="loginFormRef" :model="loginFormData" :rules="loginRules" size="large">
+    <h3 text-center m-0 mb-24px>{{ t("login.login") }}</h3>
+    <el-form
+      ref="loginFormRef"
+      :model="loginFormData"
+      :rules="loginRules"
+      size="large"
+      class="mb-4"
+    >
       <!-- 用户名 -->
-      <el-form-item prop="username">
+      <el-form-item prop="username" class="mb-6">
         <el-input v-model.trim="loginFormData.username" :placeholder="t('login.username')">
           <template #prefix>
             <el-icon><User /></el-icon>
@@ -13,7 +19,7 @@
 
       <!-- 密码 -->
       <el-tooltip :visible="isCapsLock" :content="t('login.capsLock')" placement="right">
-        <el-form-item prop="password">
+        <el-form-item prop="password" class="mb-6">
           <el-input
             v-model.trim="loginFormData.password"
             :placeholder="t('login.password')"
@@ -30,7 +36,7 @@
       </el-tooltip>
 
       <!-- 验证码 -->
-      <el-form-item prop="captchaCode">
+      <el-form-item prop="captchaCode" class="mb-6">
         <div flex>
           <el-input
             v-model.trim="loginFormData.captchaCode"
@@ -57,46 +63,23 @@
         </div>
       </el-form-item>
 
-      <div class="flex-x-between w-full">
+      <div class="flex-x-between w-full mb-6">
         <el-checkbox v-model="loginFormData.rememberMe">{{ t("login.rememberMe") }}</el-checkbox>
-        <el-link type="primary" underline="never" @click="toOtherForm('resetPwd')">
-          {{ t("login.forgetPassword") }}
-        </el-link>
       </div>
 
       <!-- 登录按钮 -->
       <el-form-item>
-        <el-button :loading="loading" type="primary" class="w-full" @click="handleLoginSubmit">
+        <el-button
+          :loading="loading"
+          type="primary"
+          class="w-full"
+          size="large"
+          @click="handleLoginSubmit"
+        >
           {{ t("login.login") }}
         </el-button>
       </el-form-item>
     </el-form>
-
-    <div flex-center gap-10px>
-      <el-text size="default">{{ t("login.noAccount") }}</el-text>
-      <el-link type="primary" underline="never" @click="toOtherForm('register')">
-        {{ t("login.reg") }}
-      </el-link>
-    </div>
-
-    <!-- 第三方登录 -->
-    <el-divider>
-      <el-text size="small">{{ t("login.otherLoginMethods") }}</el-text>
-    </el-divider>
-    <div class="flex-center gap-x-5 w-full text-[var(--el-text-color-secondary)]">
-      <CommonWrapper>
-        <div text-20px class="i-svg:wechat" />
-      </CommonWrapper>
-      <CommonWrapper>
-        <div text-20px cursor-pointer class="i-svg:qq" />
-      </CommonWrapper>
-      <CommonWrapper>
-        <div text-20px cursor-pointer class="i-svg:github" />
-      </CommonWrapper>
-      <CommonWrapper>
-        <div text-20px cursor-pointer class="i-svg:gitee" />
-      </CommonWrapper>
-    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -106,7 +89,6 @@ import { useI18n } from "vue-i18n";
 import AuthAPI, { type LoginFormData } from "@/api/auth.api";
 import router from "@/router";
 import { useUserStore } from "@/store";
-import CommonWrapper from "@/components/CommonWrapper/index.vue";
 
 const { t } = useI18n();
 const userStore = useUserStore();
@@ -230,10 +212,5 @@ function checkCapsLock(event: KeyboardEvent) {
   if (event instanceof KeyboardEvent) {
     isCapsLock.value = event.getModifierState("CapsLock");
   }
-}
-
-const emit = defineEmits(["update:modelValue"]);
-function toOtherForm(type: "register" | "resetPwd") {
-  emit("update:modelValue", type);
 }
 </script>
