@@ -95,9 +95,15 @@ const onlyOneChild = ref();
  * @returns 是否仅有一个可见子节点
  */
 function hasOneShowingChild(children: RouteRecordRaw[] = [], parent: RouteRecordRaw) {
+  // 确保children不为null或undefined
+  if (!children) {
+    onlyOneChild.value = { ...parent, path: "", noShowingChildren: true };
+    return true;
+  }
+
   // 过滤出可见子节点
   const showingChildren = children.filter((route: RouteRecordRaw) => {
-    if (!route.meta?.hidden) {
+    if (route && !route.meta?.hidden) {
       onlyOneChild.value = route;
       return true;
     }

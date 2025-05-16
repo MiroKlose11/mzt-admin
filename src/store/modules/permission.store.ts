@@ -23,7 +23,8 @@ export const usePermissionStore = defineStore("permission", () => {
   function generateRoutes() {
     return new Promise<RouteRecordRaw[]>((resolve, reject) => {
       MenuAPI.getRoutes()
-        .then((data) => {
+        .then((res) => {
+          const data = res || [];
           const dynamicRoutes = parseDynamicRoutes(data);
           routes.value = [...constantRoutes, ...dynamicRoutes];
           isRoutesLoaded.value = true;
