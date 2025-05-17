@@ -103,7 +103,21 @@
               {{ userProfile.deptName }}
             </el-descriptions-item>
             <el-descriptions-item label="创建时间">
-              {{ userProfile.createTime }}
+              {{
+                userProfile.createTime
+                  ? new Date(userProfile.createTime)
+                      .toLocaleString("zh-CN", {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: false,
+                      })
+                      .replace(/\//g, "-")
+                  : ""
+              }}
             </el-descriptions-item>
           </el-descriptions>
         </el-card>
@@ -458,8 +472,36 @@ const handleFileChange = async (event: Event) => {
 
 /** 加载用户信息 */
 const loadUserProfile = async () => {
-  const data = await UserAPI.getProfile();
-  userProfile.value = data;
+  try {
+    // 使用/users/me接口获取当前登录用户信息
+    const data = await UserAPI.getInfo();
+    if (data && data.userId) {
+      // 使用获取到的userId调用获取用户详细资料接口
+      const profileData = await UserAPI.getUserProfile(data.userId);
+      console.log("用户详情数据:", profileData);
+
+      // 从接口获取创建时间或使用当前时间作为默认值
+      const createTime = profileData.createTime;
+      console.log("创建时间:", createTime);
+
+      userProfile.value = {
+        ...profileData,
+        id: data.userId,
+        username: data.username,
+        nickname: data.nickname,
+        avatar: data.avatar,
+        roleNames: data.roles?.join(", "),
+        createTime: createTime ? new Date(createTime) : undefined,
+      };
+    } else {
+      // 如果没有获取到userId，则使用原有的profile接口
+      const profileData = await UserAPI.getProfile();
+      userProfile.value = profileData;
+    }
+  } catch (error) {
+    console.error("获取用户信息失败", error);
+    ElMessage.error("获取用户信息失败");
+  }
 };
 
 onMounted(async () => {

@@ -7,5 +7,5 @@ alwaysApply: true
 # Your rule content
 
 
-没有我的允许不要开启mock服务，不要使用mock数据
-不要每次修改代码后运行pnpm run dev
+1.没有我的允许不要开启mock服务，不要使用mock数据
+2.不要每次修改代码后运行pnpm run dev

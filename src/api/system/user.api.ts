@@ -145,6 +145,19 @@ const UserAPI = {
     });
   },
 
+  /**
+   * 获取指定用户的个人资料信息
+   *
+   * @param userId 用户ID
+   * @returns 用户个人资料信息
+   */
+  getUserProfile(userId: string) {
+    return request<any, UserProfileForm>({
+      url: `${USER_BASE_URL}/${userId}/profile`,
+      method: "get",
+    });
+  },
+
   /** 修改个人中心用户信息 */
   updateProfile(data: UserProfileForm) {
     return request({
@@ -355,6 +368,9 @@ export interface UserProfileForm {
 
   /** 邮箱 */
   email?: string;
+
+  /** 创建时间 */
+  createTime?: string | Date;
 }
 
 /** 修改密码表单 */

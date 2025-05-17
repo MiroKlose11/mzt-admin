@@ -85,7 +85,7 @@
                 v-if="scope.row.imageUrl"
                 :ref="
                   (el) => {
-                    if (el) showImage(el, scope.row.imageUrl);
+                    if (el) showImage(el as HTMLElement, scope.row.imageUrl);
                   }
                 "
                 style="width: 100%; height: 100%"

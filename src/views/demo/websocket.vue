@@ -125,13 +125,7 @@ watch(
   () => isConnected.value,
   (connected) => {
     if (connected) {
-      // 连接成功后，订阅广播和点对点消息主题
-      subscribe("/topic/notice", (res) => {
-        messages.value.push({
-          sender: "Server",
-          content: res.body,
-        });
-      });
+      // 连接成功后，订阅点对点消息主题
       subscribe("/user/queue/greeting", (res) => {
         const messageData = JSON.parse(res.body) as MessageType;
         messages.value.push({

@@ -187,23 +187,10 @@ async function handleLoginSubmit() {
  * @returns 标准化后的路由地址对象
  */
 function resolveRedirectTarget(query: LocationQuery): RouteLocationRaw {
-  // 默认跳转路径
+  // 始终重定向到首页
   const defaultPath = "/";
 
-  // 获取原始重定向路径
-  const rawRedirect = (query.redirect as string) || defaultPath;
-
-  try {
-    // 6. 使用Vue Router解析路径
-    const resolved = router.resolve(rawRedirect);
-    return {
-      path: resolved.path,
-      query: resolved.query,
-    };
-  } catch {
-    // 7. 异常处理：返回安全路径
-    return { path: defaultPath };
-  }
+  return { path: defaultPath };
 }
 
 // 检查输入大小写
