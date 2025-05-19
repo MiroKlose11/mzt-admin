@@ -43,20 +43,49 @@ service.interceptors.response.use(
   async (error) => {
     console.error("request error", error); // for debug
     const { config, response } = error;
+
+    // 处理HTTP状态码
     if (response) {
-      const { code, msg } = response.data;
-      if (code === ResultEnum.ACCESS_TOKEN_INVALID) {
+      // 检查是否有响应数据
+      const responseData = response.data || {};
+      const code = responseData.code;
+      const msg = responseData.message || responseData.msg || "系统出错";
+
+      // 处理令牌过期情况
+      if (
+        code === ResultEnum.ACCESS_TOKEN_INVALID ||
+        code === ResultEnum.TOKEN_EXPIRED ||
+        code === ResultEnum.INVALID_TOKEN
+      ) {
         // Token 过期，刷新 Token
         return handleTokenRefresh(config);
-      } else if (code === ResultEnum.REFRESH_TOKEN_INVALID) {
+      }
+      // 处理刷新令牌过期情况
+      else if (code === ResultEnum.REFRESH_TOKEN_INVALID) {
         // 刷新 Token 过期，跳转登录页
         await handleSessionExpired();
-        return Promise.reject(new Error(msg || "Error"));
+        return Promise.reject(new Error(msg));
+      }
+      // 处理未授权和禁止访问情况
+      else if (
+        code === ResultEnum.UNAUTHORIZED ||
+        code === ResultEnum.FORBIDDEN ||
+        code === ResultEnum.NO_PERMISSION ||
+        response.status === 401 ||
+        response.status === 403
+      ) {
+        // 如果有访问令牌，尝试刷新
+        if (getAccessToken()) {
+          return handleTokenRefresh(config);
+        } else {
+          await handleSessionExpired();
+          return Promise.reject(new Error(msg));
+        }
       } else {
-        ElMessage.error(msg || "系统出错");
+        ElMessage.error(msg);
       }
     }
-    return Promise.reject(error.message);
+    return Promise.reject(error.message || "请求失败");
   }
 );
 export default service;

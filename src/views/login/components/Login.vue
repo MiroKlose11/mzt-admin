@@ -186,7 +186,7 @@ async function handleLoginSubmit() {
  * @param query 路由查询参数
  * @returns 标准化后的路由地址对象
  */
-function resolveRedirectTarget(query: LocationQuery): RouteLocationRaw {
+function resolveRedirectTarget(_query: LocationQuery): RouteLocationRaw {
   // 始终重定向到首页
   const defaultPath = "/";
 
