@@ -3,8 +3,13 @@ import { createRouter, createWebHashHistory, type RouteRecordRaw } from "vue-rou
 
 export const Layout = () => import("@/layout/index.vue");
 
-// 静态路由
+/** 前端定义的固定路由 */
 export const constantRoutes: RouteRecordRaw[] = [
+  {
+    path: "/login",
+    component: () => import("@/views/login/index.vue"),
+    meta: { hidden: true },
+  },
   {
     path: "/redirect",
     component: Layout,
@@ -16,13 +21,61 @@ export const constantRoutes: RouteRecordRaw[] = [
       },
     ],
   },
-
   {
-    path: "/login",
-    component: () => import("@/views/login/index.vue"),
+    path: "/personal",
+    component: Layout,
     meta: { hidden: true },
+    children: [
+      {
+        path: "",
+        component: () => import("@/views/profile/index.vue"),
+        name: "Profile",
+        meta: {
+          title: "个人中心",
+          icon: "profile",
+        },
+      },
+    ],
   },
-
+  {
+    path: "/article",
+    component: Layout,
+    meta: { hidden: true },
+    children: [
+      {
+        path: "",
+        component: () => import("@/views/article/index.vue"),
+        name: "ArticleList",
+        meta: {
+          title: "文章管理",
+          icon: "document",
+          keepAlive: true,
+        },
+      },
+      {
+        path: "edit/:id?",
+        component: () => import("@/views/article/edit.vue"),
+        name: "ArticleEdit",
+        meta: {
+          title: "编辑文章",
+          icon: "edit",
+          hidden: true,
+          activeMenu: "/article",
+        },
+      },
+      {
+        path: "preview/:id",
+        component: () => import("@/views/article/preview.vue"),
+        name: "ArticlePreview",
+        meta: {
+          title: "文章预览",
+          icon: "view",
+          hidden: true,
+          activeMenu: "/article",
+        },
+      },
+    ],
+  },
   {
     path: "/",
     name: "/",
@@ -51,12 +104,6 @@ export const constantRoutes: RouteRecordRaw[] = [
         path: "404",
         component: () => import("@/views/error/404.vue"),
         meta: { hidden: true },
-      },
-      {
-        path: "profile",
-        name: "Profile",
-        component: () => import("@/views/profile/index.vue"),
-        meta: { title: "个人中心", icon: "user", hidden: true },
       },
     ],
   },

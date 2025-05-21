@@ -60,6 +60,24 @@ const toolbarConfig = ref<Partial<IToolbarConfig>>({});
 // 编辑器配置
 const editorConfig = ref<Partial<IEditorConfig>>({
   placeholder: "请输入内容...",
+  // 添加粘贴事件过滤处理
+  customPaste: (editor: any, e: ClipboardEvent) => {
+    // 获取粘贴的文本内容
+    const text = e.clipboardData?.getData("text/plain") || "";
+
+    // 如果粘贴内容过长或包含复杂HTML结构，可能导致栈溢出
+    if (text.length > 50000) {
+      // 只截取一部分文本，避免过长内容导致栈溢出
+      const clippedText = text.substring(0, 50000) + "...(内容过长，已截断)";
+      // 使用文本方式插入，而不是HTML方式
+      editor.insertText(clippedText);
+      // 阻止默认粘贴行为
+      return false;
+    }
+
+    // 允许默认粘贴行为
+    return true;
+  },
   MENU_CONF: {
     uploadImage: {
       customUpload(file: File, insertFn: InsertFnType) {

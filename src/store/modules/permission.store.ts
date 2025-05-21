@@ -87,6 +87,11 @@ const parseDynamicRoutes = (rawRoutes: RouteVO[]): RouteRecordRaw[] => {
   rawRoutes.forEach((route) => {
     const normalizedRoute = { ...route } as RouteRecordRaw;
 
+    // 确保路径以 "/" 开头
+    if (normalizedRoute.path && !normalizedRoute.path.startsWith("/")) {
+      normalizedRoute.path = `/${normalizedRoute.path}`;
+    }
+
     // 处理组件路径
     normalizedRoute.component =
       normalizedRoute.component?.toString() === "Layout"
