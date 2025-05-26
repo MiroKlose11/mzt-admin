@@ -33,10 +33,31 @@ service.interceptors.response.use(
     if (response.config.responseType === "blob") {
       return response;
     }
+
+    console.log("[Request Interceptor] Response URL:", response.config.url);
+    console.log("[Request Interceptor] Response Data:", response.data);
+
     const { code, data, msg } = response.data;
+
+    // 特殊处理文件上传接口的成功响应
+    // 尝试更灵活地匹配 URL，因为它可能包含 baseURL
+    // 恢复：只有 "00000" 是 /file/upload 的成功码
+    if (response.config.url?.endsWith("/file/upload") && code === "00000") {
+      console.log("[Request Interceptor] Handled as /file/upload success with code:", code);
+      return response.data; // 返回整个 { code, data, msg } 对象
+    }
+
     if (code === ResultEnum.SUCCESS) {
+      console.log("[Request Interceptor] Handled as ResultEnum.SUCCESS.");
       return data;
     }
+
+    console.error(
+      "[Request Interceptor] Unhandled success/error code:",
+      code,
+      "Expected SUCCESS:",
+      ResultEnum.SUCCESS
+    );
     ElMessage.error(msg || "系统出错");
     return Promise.reject(new Error(msg || "Error"));
   },

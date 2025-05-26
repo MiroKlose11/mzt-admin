@@ -401,22 +401,25 @@ function handleCoverChange(e: Event) {
       return;
     }
 
-    // 显示上传中提示
     const loadingMsg = ElMessage({
-      message: "上传中...",
+      message: "封面上传中...",
       duration: 0,
       type: "info",
     });
 
-    // 使用FileAPI上传文件
-    FileAPI.uploadFile(file)
+    FileAPI.uploadToCOS(file, "images/articles/covers/")
       .then((result) => {
-        formData.value.coverImage = result.url;
-        ElMessage.success("上传成功");
+        if (result.code === "00000") {
+          formData.value.coverImage = result.data;
+          console.log("[handleCoverChange] 封面图片已更新为 COS URL:", formData.value.coverImage);
+          ElMessage.success("封面上传成功");
+        } else {
+          ElMessage.error(result.msg || "封面上传失败");
+        }
       })
       .catch((error) => {
-        console.error("上传失败", error);
-        ElMessage.error("上传失败");
+        console.error("封面上传处理失败", error);
+        ElMessage.error("封面上传处理失败");
       })
       .finally(() => {
         loadingMsg.close();

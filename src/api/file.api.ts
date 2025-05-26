@@ -34,6 +34,27 @@ const FileAPI = {
   },
 
   /**
+   * 上传文件到腾讯云COS
+   * @param file 要上传的文件
+   * @param directory 上传到COS的目录路径 (可选)
+   */
+  uploadToCOS(file: File, directory?: string) {
+    const formData = new FormData();
+    formData.append("file", file);
+    if (directory) {
+      formData.append("directory", directory);
+    }
+    return request<any, { code: string; data: string; msg: string }>({
+      url: "/file/upload",
+      method: "post",
+      data: formData,
+      headers: {
+        "Content-Type": undefined,
+      },
+    });
+  },
+
+  /**
    * 删除文件
    *
    * @param filePath 文件完整路径

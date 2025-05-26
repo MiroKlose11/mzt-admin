@@ -32,6 +32,7 @@
 import "@wangeditor-next/editor/dist/css/style.css";
 import { Toolbar, Editor } from "@wangeditor-next/editor-for-vue";
 import { IToolbarConfig, IEditorConfig } from "@wangeditor-next/editor";
+import { ElMessage } from "element-plus";
 
 // 文件上传 API
 import FileAPI from "@/api/file.api";
@@ -81,11 +82,39 @@ const editorConfig = ref<Partial<IEditorConfig>>({
   MENU_CONF: {
     uploadImage: {
       customUpload(file: File, insertFn: InsertFnType) {
-        // 上传图片
-        FileAPI.uploadFile(file).then((res) => {
-          // 插入图片
-          insertFn(res.url, res.name, res.url);
-        });
+        // 上传图片到COS
+        FileAPI.uploadToCOS(file, "images/editor/")
+          .then((res) => {
+            if (res.code === "00000") {
+              // 插入图片
+              insertFn(res.data, file.name, "");
+              ElMessage.success("图片上传成功");
+            } else {
+              ElMessage.error(res.msg || "图片上传失败");
+            }
+          })
+          .catch((err) => {
+            console.error("图片上传错误", err);
+            ElMessage.error("图片上传失败");
+          });
+      },
+    } as any,
+    uploadVideo: {
+      customUpload(file: File, insertFn: (_url: string, _poster?: string) => void) {
+        // 上传视频到COS
+        FileAPI.uploadToCOS(file, "videos/editor/")
+          .then((res) => {
+            if (res.code === "00000") {
+              insertFn(res.data); // data 字段是视频的URL
+              ElMessage.success("视频上传成功");
+            } else {
+              ElMessage.error(res.msg || "视频上传失败");
+            }
+          })
+          .catch((err) => {
+            console.error("视频上传错误", err);
+            ElMessage.error("视频上传失败");
+          });
       },
     } as any,
   },

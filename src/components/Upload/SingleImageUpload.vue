@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 import { UploadRawFile, UploadRequestOptions } from "element-plus";
-import FileAPI, { FileInfo } from "@/api/file.api";
+import FileAPI from "@/api/file.api";
 
 const props = defineProps({
   /**
@@ -120,17 +120,21 @@ function handleUpload(options: UploadRequestOptions) {
   return new Promise((resolve, reject) => {
     const file = options.file;
 
-    const formData = new FormData();
-    formData.append(props.name, file);
+    //不再需要手动创建FormData，FileAPI.uploadToCOS会处理
+    //const formData = new FormData();
+    //formData.append(props.name, file);
 
-    // 处理附加参数
-    Object.keys(props.data).forEach((key) => {
-      formData.append(key, props.data[key]);
-    });
+    // 处理附加参数 props.data 应该在调用 uploadToCOS 时作为 directory 参数，如果适用的话
+    // Object.keys(props.data).forEach((key) => {
+    //   formData.append(key, props.data[key]);
+    // });
 
-    FileAPI.upload(formData)
-      .then((data) => {
-        resolve(data);
+    // FileAPI.upload(formData) // 旧的上传方法
+    FileAPI.uploadToCOS(file, props.data?.directory || "images/uploads/") // 使用新的COS上传方法
+      .then((response) => {
+        // response 的结构是 { code: string; data: string; msg: string }
+        // resolve(data); // 旧的 resolve
+        resolve(response); // 将整个响应传递给 onSuccess
       })
       .catch((error) => {
         reject(error);
@@ -148,11 +152,15 @@ function handleDelete() {
 /**
  * 上传成功回调
  *
- * @param fileInfo 上传成功后的文件信息
+ * @param response COS上传接口的响应 { code: string; data: string; msg: string }
  */
-const onSuccess = (fileInfo: FileInfo) => {
-  ElMessage.success("上传成功");
-  modelValue.value = fileInfo.url;
+const onSuccess = (response: { code: string; data: string; msg: string }) => {
+  if (response.code === "00000") {
+    ElMessage.success("上传成功");
+    modelValue.value = response.data; // data 字段是URL
+  } else {
+    ElMessage.error(response.msg || "上传失败");
+  }
 };
 
 /**
