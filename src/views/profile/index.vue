@@ -243,20 +243,24 @@ import UserAPI, {
 import FileAPI from "@/api/file.api";
 
 import { Camera } from "@element-plus/icons-vue";
+import { useUserStore } from "@/store/modules/user.store";
 
+const userStore = useUserStore();
 const userProfile = ref<UserProfileVO>({});
 
-const enum DialogType {
-  ACCOUNT = "account",
-  PASSWORD = "password",
-  MOBILE = "mobile",
-  EMAIL = "email",
-}
+const DialogType = {
+  ACCOUNT: "account",
+  PASSWORD: "password",
+  MOBILE: "mobile",
+  EMAIL: "email",
+} as const;
+
+type DialogTypeValues = (typeof DialogType)[keyof typeof DialogType];
 
 const dialog = reactive({
   visible: false,
   title: "",
-  type: "" as DialogType, // 修改账号资料,修改密码、绑定手机、绑定邮箱
+  type: "" as DialogTypeValues, // 修改账号资料,修改密码、绑定手机、绑定邮箱
 });
 const userProfileFormRef = ref();
 const passwordChangeFormRef = ref();
@@ -311,7 +315,7 @@ const emailBindingRules = {
  * 打开弹窗
  * @param type 弹窗类型 ACCOUNT: 账号资料 PASSWORD: 修改密码 MOBILE: 绑定手机 EMAIL: 绑定邮箱
  */
-const handleOpenDialog = (type: DialogType) => {
+const handleOpenDialog = (type: DialogTypeValues) => {
   dialog.type = type;
   dialog.visible = true;
   switch (type) {
@@ -456,16 +460,27 @@ const handleFileChange = async (event: Event) => {
   if (file) {
     // 调用文件上传API
     try {
-      const data = await FileAPI.uploadFile(file);
-      // 更新用户头像
-      userProfile.value.avatar = data.url;
-      // 更新用户信息
-      await UserAPI.updateProfile({
-        avatar: data.url,
-      });
+      // 使用uploadToCOS方法上传到腾讯云COS
+      const response = await FileAPI.uploadToCOS(file, "images/avatars/");
+      if (response.code === "00000") {
+        // 更新用户头像UI显示
+        userProfile.value.avatar = response.data;
+
+        // 同时更新用户状态中的头像，确保顶部导航栏头像也更新
+        userStore.userInfo.avatar = response.data;
+
+        ElMessage.success("头像上传成功");
+      } else {
+        ElMessage.error(response.msg || "头像上传失败");
+      }
     } catch (error) {
       console.error("头像上传失败：" + error);
       ElMessage.error("头像上传失败");
+    } finally {
+      // 清空文件输入框，以便于下次选择同一文件时也能触发change事件
+      if (fileInput.value) {
+        fileInput.value.value = "";
+      }
     }
   }
 };
