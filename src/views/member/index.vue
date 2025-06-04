@@ -109,11 +109,15 @@
           </template>
         </el-table-column>
         <el-table-column
-          prop="organization"
+          prop="organizationName"
           label="所属机构"
           min-width="180"
           show-overflow-tooltip
-        />
+        >
+          <template #default="scope">
+            {{ scope.row.organizationName || scope.row.organization || "-" }}
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="70" align="center">
           <template #default="scope">
             <el-tag
@@ -200,7 +204,28 @@
           <el-input v-model="form.titleText" placeholder="请输入显示头衔" />
         </el-form-item>
         <el-form-item label="所属机构">
-          <el-input v-model="form.organization" placeholder="请输入所属单位/机构" />
+          <el-select
+            v-model="form.organizationId"
+            filterable
+            clearable
+            placeholder="请选择机构"
+            style="width: 100%"
+            @change="onOrganizationChange"
+          >
+            <el-option
+              v-for="org in organizationList"
+              :key="org.id"
+              :label="org.name"
+              :value="org.id"
+            />
+            <el-option :label="'手动输入'" :value="0" />
+          </el-select>
+          <el-input
+            v-if="form.organizationId === 0"
+            v-model="form.organization"
+            placeholder="请输入机构名称"
+            style="margin-top: 8px"
+          />
         </el-form-item>
         <el-form-item label="个人简介">
           <el-input
@@ -411,6 +436,8 @@ const router = useRouter();
 const queryParams = ref<MemberQuery>({
   current: 1,
   size: 10,
+  name: "",
+  status: undefined,
 });
 
 // 表单对话框
@@ -433,6 +460,16 @@ const rules = {
   name: [{ required: true, message: "请输入姓名", trigger: "blur" }],
 };
 
+// 机构列表
+const organizationList = ref<{ id: number; name: string }[]>([]);
+
+// 机构选择变化时
+const onOrganizationChange = (val: number) => {
+  if (val !== 0) {
+    form.organization = "";
+  }
+};
+
 // 获取成员列表
 const getMemberList = async () => {
   loading.value = true;
@@ -440,8 +477,7 @@ const getMemberList = async () => {
     const result = await MemberAPI.getPage(queryParams.value);
     memberList.value = result.records || [];
     total.value = result.total || 0;
-  } catch (error) {
-    console.error("获取成员列表失败", error);
+  } catch {
     ElMessage.error("获取成员列表失败");
   } finally {
     loading.value = false;
@@ -561,21 +597,23 @@ const beforeAvatarUpload = (file: File) => {
 const submitForm = async () => {
   formRef.value.validate(async (valid: boolean) => {
     if (!valid) return;
-
-    try {
-      if (dialog.type === "add") {
-        await MemberAPI.create(form);
-        ElMessage.success("新增成功");
-      } else {
-        await MemberAPI.update(form);
-        ElMessage.success("更新成功");
-      }
-      dialog.visible = false;
-      getMemberList();
-    } catch (error) {
-      console.error("保存成员失败", error);
-      ElMessage.error("保存成员失败");
+    // 只提交一个机构字段
+    const submitData = { ...form };
+    if (submitData.organizationId && submitData.organizationId !== 0) {
+      submitData.organization = undefined;
+    } else {
+      submitData.organizationId = undefined;
     }
+    // 新增/更新逻辑
+    if (dialog.type === "add") {
+      await MemberAPI.create(submitData);
+      ElMessage.success("新增成功");
+    } else {
+      await MemberAPI.update(submitData);
+      ElMessage.success("更新成功");
+    }
+    dialog.visible = false;
+    getMemberList();
   });
 };
 

@@ -170,6 +170,8 @@ export interface MemberDTO {
   gender?: GenderEnum;
   /** 显示头衔 */
   titleText?: string;
+  /** 所属单位/机构ID */
+  organizationId?: number;
   /** 所属单位/机构 */
   organization?: string;
   /** 职业所在地ID */
