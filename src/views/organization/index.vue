@@ -60,18 +60,17 @@
       <div class="data-table__toolbar">
         <div class="data-table__toolbar--actions">
           <el-button type="success" :icon="Plus" @click="handleAdd">新增机构</el-button>
+          <el-button type="primary" :icon="Menu" @click="handleTypeManagement">
+            机构类型管理
+          </el-button>
         </div>
       </div>
 
       <!-- 列表 -->
       <el-table v-loading="loading" :data="organizationList" style="width: 100%">
-        <el-table-column prop="id" label="ID" width="60" align="center" />
+        <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column prop="name" label="机构名称" min-width="180" show-overflow-tooltip />
-        <el-table-column label="机构类型" width="120" show-overflow-tooltip>
-          <template #default="scope">
-            {{ getTypeName(scope.row.typeId) }}
-          </template>
-        </el-table-column>
+        <el-table-column prop="typeName" label="机构类型" width="120" show-overflow-tooltip />
         <el-table-column prop="address" label="地址" min-width="200" show-overflow-tooltip />
         <el-table-column prop="cityName" label="所在城市" width="120" show-overflow-tooltip />
         <el-table-column prop="phone" label="联系电话" width="150" show-overflow-tooltip />
@@ -131,9 +130,6 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="机构地址">
-          <el-input v-model="form.address" placeholder="请输入机构地址" />
-        </el-form-item>
         <el-form-item label="所在城市">
           <el-cascader
             v-model="selectedRegion"
@@ -145,8 +141,14 @@
             clearable
             @change="handleRegionChange"
           />
+          <div v-if="form.cityName" style="margin-top: 5px; color: #666; font-size: 12px">
+            已选择: {{ form.cityName }} (ID: {{ form.cityId }})
+          </div>
         </el-form-item>
-        <el-form-item label="联系电话">
+        <el-form-item label="机构地址">
+          <el-input v-model="form.address" placeholder="请输入机构地址" />
+        </el-form-item>
+        <el-form-item label="联系电话" prop="phone">
           <el-input v-model="form.phone" placeholder="请输入联系电话" />
         </el-form-item>
         <el-form-item label="状态">
@@ -163,12 +165,87 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 机构类型管理对话框 -->
+    <el-dialog
+      v-model="typeDialog.visible"
+      title="机构类型管理"
+      width="1000px"
+      append-to-body
+      destroy-on-close
+    >
+      <div class="type-management">
+        <!-- 类型管理工具栏 -->
+        <div class="type-management__toolbar">
+          <el-button type="success" :icon="Plus" @click="handleAddType">新增类型</el-button>
+        </div>
+
+        <!-- 类型列表 -->
+        <el-table v-loading="typeLoading" :data="typeList" style="width: 100%" class="mt-10">
+          <el-table-column type="index" label="序号" width="60" align="center" />
+          <el-table-column prop="code" label="类型编码" width="120" show-overflow-tooltip />
+          <el-table-column prop="name" label="类型名称" min-width="150" show-overflow-tooltip />
+          <el-table-column
+            prop="description"
+            label="类型说明"
+            min-width="200"
+            show-overflow-tooltip
+          />
+          <el-table-column label="操作" width="150" align="center">
+            <template #default="scope">
+              <el-button link type="primary" size="small" @click="handleEditType(scope.row)">
+                编辑
+              </el-button>
+              <el-button link type="danger" size="small" @click="handleDeleteType(scope.row)">
+                删除
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
+
+    <!-- 机构类型表单对话框 -->
+    <el-dialog
+      v-model="typeFormDialog.visible"
+      :title="typeFormDialog.title"
+      width="500px"
+      append-to-body
+      destroy-on-close
+    >
+      <el-form
+        ref="typeFormRef"
+        :model="typeForm"
+        :rules="typeRules"
+        label-width="100px"
+        style="max-height: 500px; overflow-y: auto"
+      >
+        <el-form-item label="类型编码" prop="code">
+          <el-input v-model="typeForm.code" placeholder="请输入类型编码" />
+        </el-form-item>
+        <el-form-item label="类型名称" prop="name">
+          <el-input v-model="typeForm.name" placeholder="请输入类型名称" />
+        </el-form-item>
+        <el-form-item label="类型说明">
+          <el-input v-model="typeForm.description" type="textarea" placeholder="请输入类型说明" />
+        </el-form-item>
+        <el-form-item label="排序">
+          <el-input-number v-model="typeForm.sort" :min="0" :max="999" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="typeFormDialog.visible = false">取消</el-button>
+          <el-button type="primary" @click="submitTypeForm">确定</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from "vue";
-import { Search, Plus, Refresh } from "@element-plus/icons-vue";
+import { Search, Plus, Refresh, Menu } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import OrganizationAPI, {
   type OrganizationQuery,
@@ -176,7 +253,10 @@ import OrganizationAPI, {
   type OrganizationVO,
   OrganizationStatusEnum,
 } from "@/api/organization.api";
-import OrganizationTypeAPI from "@/api/organizationType.api";
+import OrganizationTypeAPI, {
+  type OrganizationTypeDTO,
+  type OrganizationTypeVO,
+} from "@/api/organizationType.api";
 import CityAPI from "@/api/city.api";
 import { formatDateTime } from "@/utils/date";
 
@@ -192,7 +272,7 @@ const selectedRegion = ref<any[]>([]);
 
 // 省市区级联选择器配置
 const cascaderProps = {
-  expandTrigger: "hover" as const,
+  expandTrigger: "click" as const,
   checkStrictly: false,
   multiple: false,
   emitPath: true,
@@ -239,70 +319,7 @@ const form = reactive<OrganizationDTO>({
 const rules = {
   name: [{ required: true, message: "请输入机构名称", trigger: "blur" }],
   typeId: [{ required: true, message: "请选择机构类型", trigger: "change" }],
-};
-
-// 获取机构类型名称
-const getTypeName = (typeId: number) => {
-  const type = typeOptions.value.find((item) => item.value === typeId);
-  return type ? type.label : "";
-};
-
-// 处理省市区选择变化
-const handleRegionChange = (val: any) => {
-  // 清空之前的值
-  form.cityName = "";
-  form.cityId = undefined;
-
-  // 检查值是否有效
-  if (!val || !Array.isArray(val) || val.length === 0) {
-    return;
-  }
-
-  try {
-    // 获取省市区的完整路径名称
-    const labels: string[] = [];
-    const ids: number[] = [];
-
-    // 递归查找节点
-    const findNodePath = (id: number, nodes: any[]): boolean => {
-      for (const node of nodes) {
-        if (node.id === id) {
-          labels.push(node.name);
-          ids.push(node.id);
-          return true;
-        }
-
-        if (node.children && node.children.length > 0) {
-          if (findNodePath(id, node.children)) {
-            labels.unshift(node.name);
-            ids.unshift(node.id);
-            return true;
-          }
-        }
-      }
-      return false;
-    };
-
-    // 查找最后一级的完整路径
-    const lastId = Number(val[val.length - 1]);
-    if (!isNaN(lastId)) {
-      findNodePath(lastId, regionOptions.value);
-
-      // 设置城市名称和ID
-      if (labels.length > 0) {
-        form.cityName = labels.join("-");
-        form.cityId = lastId;
-      }
-
-      console.log("选择的区域:", {
-        cityId: form.cityId,
-        cityName: form.cityName,
-        path: ids,
-      });
-    }
-  } catch (error) {
-    console.error("处理区域选择出错:", error);
-  }
+  phone: [{ pattern: /^1[3-9]\d{9}$/, message: "请输入11位有效手机号码", trigger: "blur" }],
 };
 
 // 获取机构类型列表
@@ -328,63 +345,10 @@ const getRegionData = async () => {
   try {
     const result = await CityAPI.getList();
     if (result && result.length > 0) {
-      console.log("原始城市数据:", result);
+      console.log("后端返回的树状城市数据:", result);
 
-      // 按照层级分类城市数据
-      const provinces: any[] = [];
-      const cities: { [key: number]: any } = {};
-      const districts: { [key: number]: any } = {};
-
-      // 第一步：将城市数据分类
-      result.forEach((city) => {
-        // 创建节点对象
-        const node = {
-          id: city.id,
-          name: city.name,
-          parentId: city.parentId || 0,
-          children: [],
-        };
-
-        // 根据parentId判断层级
-        if (!city.parentId || city.parentId === 0) {
-          // 省级
-          provinces.push(node);
-        } else {
-          // 查找父节点是否为省级
-          const parentIsProvince = result.find(
-            (p) => p.id === city.parentId && (!p.parentId || p.parentId === 0)
-          );
-
-          if (parentIsProvince) {
-            // 市级
-            cities[city.id] = node;
-          } else {
-            // 区级
-            districts[city.id] = node;
-          }
-        }
-      });
-
-      // 第二步：构建省市区层级关系
-      // 将市级添加到对应的省下面
-      Object.values(cities).forEach((city) => {
-        const province = provinces.find((p) => p.id === city.parentId);
-        if (province) {
-          province.children.push(city);
-        }
-      });
-
-      // 将区级添加到对应的市下面
-      Object.values(districts).forEach((district) => {
-        const city = Object.values(cities).find((c) => c.id === district.parentId);
-        if (city) {
-          city.children.push(district);
-        }
-      });
-
-      // 设置树形数据
-      regionOptions.value = provinces;
-      console.log("构建的省市区树形数据:", regionOptions.value);
+      // 直接使用后端返回的树状结构
+      regionOptions.value = result;
     }
   } catch (error) {
     console.error("获取省市区数据失败", error);
@@ -540,6 +504,179 @@ const submitForm = async () => {
   });
 };
 
+// 机构类型管理
+const typeDialog = reactive({
+  visible: false,
+});
+
+const typeLoading = ref(false);
+const typeList = ref<OrganizationTypeVO[]>([]);
+const typeFormRef = ref();
+const typeFormDialog = reactive({
+  visible: false,
+  title: "",
+});
+const typeForm = reactive<OrganizationTypeDTO>({
+  code: "",
+  name: "",
+  description: "",
+  sort: 0,
+});
+const typeRules = {
+  code: [{ required: true, message: "请输入类型编码", trigger: "blur" }],
+  name: [{ required: true, message: "请输入类型名称", trigger: "blur" }],
+};
+
+// 打开机构类型管理对话框
+const handleTypeManagement = () => {
+  typeDialog.visible = true;
+  getTypeList();
+};
+
+// 新增机构类型
+const handleAddType = () => {
+  typeForm.id = undefined;
+  typeForm.code = "";
+  typeForm.name = "";
+  typeForm.description = "";
+  typeForm.sort = 0;
+  typeFormDialog.title = "新增机构类型";
+  typeFormDialog.visible = true;
+};
+
+// 编辑机构类型
+const handleEditType = async (row: OrganizationTypeVO) => {
+  try {
+    const typeDetail = await OrganizationTypeAPI.getDetail(row.id!);
+    typeForm.id = typeDetail.id;
+    typeForm.code = typeDetail.code;
+    typeForm.name = typeDetail.name;
+    typeForm.description = typeDetail.description || "";
+    typeForm.sort = typeDetail.sort || 0;
+    typeFormDialog.title = "编辑机构类型";
+    typeFormDialog.visible = true;
+  } catch (error) {
+    console.error("获取机构类型详情失败", error);
+    ElMessage.error("获取机构类型详情失败");
+  }
+};
+
+// 删除机构类型
+const handleDeleteType = (row: OrganizationTypeVO) => {
+  ElMessageBox.confirm(`确定要删除机构类型 ${row.name} 吗？`, "提示", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    type: "warning",
+  }).then(async () => {
+    try {
+      await OrganizationTypeAPI.delete(row.id!);
+      ElMessage.success("删除成功");
+      getTypeList();
+    } catch (error) {
+      console.error("删除机构类型失败", error);
+      ElMessage.error("删除机构类型失败");
+    }
+  });
+};
+
+// 提交机构类型表单
+const submitTypeForm = async () => {
+  typeFormRef.value.validate(async (valid: boolean) => {
+    if (!valid) return;
+
+    try {
+      if (typeForm.id) {
+        await OrganizationTypeAPI.update(typeForm);
+        ElMessage.success("更新成功");
+      } else {
+        await OrganizationTypeAPI.create(typeForm);
+        ElMessage.success("新增成功");
+      }
+      typeFormDialog.visible = false;
+      getTypeList();
+      // 更新机构类型选项
+      getOrganizationTypeList();
+    } catch (error) {
+      console.error("保存机构类型失败", error);
+      ElMessage.error("保存机构类型失败");
+    }
+  });
+};
+
+// 获取机构类型列表
+const getTypeList = async () => {
+  typeLoading.value = true;
+  try {
+    const result = await OrganizationTypeAPI.getList();
+    typeList.value = result || [];
+  } catch (error) {
+    console.error("获取机构类型列表失败", error);
+    ElMessage.error("获取机构类型列表失败");
+  } finally {
+    typeLoading.value = false;
+  }
+};
+
+// 处理省市区选择变化
+const handleRegionChange = (val: any) => {
+  console.log("级联选择器值变化:", val);
+
+  // 清空之前的值
+  form.cityName = "";
+  form.cityId = undefined;
+
+  // 检查值是否有效
+  if (!val || !Array.isArray(val) || val.length === 0) {
+    return;
+  }
+
+  try {
+    // 获取省市区的完整路径名称
+    const labels: string[] = [];
+    const ids: number[] = [];
+
+    // 递归查找节点
+    const findNodePath = (id: number, nodes: any[]): boolean => {
+      for (const node of nodes) {
+        if (node.id === id) {
+          labels.push(node.name);
+          ids.push(node.id);
+          return true;
+        }
+
+        if (node.children && node.children.length > 0) {
+          if (findNodePath(id, node.children)) {
+            labels.unshift(node.name);
+            ids.unshift(node.id);
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    // 查找最后一级的完整路径
+    const lastId = Number(val[val.length - 1]);
+    if (!isNaN(lastId)) {
+      findNodePath(lastId, regionOptions.value);
+
+      // 设置城市名称和ID
+      if (labels.length > 0) {
+        form.cityName = labels.join("-");
+        form.cityId = lastId;
+      }
+
+      console.log("选择的区域:", {
+        cityId: form.cityId,
+        cityName: form.cityName,
+        path: ids,
+      });
+    }
+  } catch (error) {
+    console.error("处理区域选择出错:", error);
+  }
+};
+
 // 初始化
 onMounted(() => {
   getOrganizationList();
@@ -563,5 +700,17 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   margin-bottom: 16px;
+}
+
+.type-management {
+  padding: 20px;
+}
+
+.type-management__toolbar {
+  margin-bottom: 20px;
+}
+
+.mt-10 {
+  margin-top: 10px;
 }
 </style>

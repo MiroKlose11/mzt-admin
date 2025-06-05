@@ -1,7 +1,7 @@
 import request from "@/utils/request";
 
 // 机构类型基础URL
-const ORGANIZATION_TYPE_BASE_URL = "/organization";
+const ORGANIZATION_TYPE_BASE_URL = "/organization-type";
 
 const OrganizationTypeAPI = {
   /**
@@ -79,9 +79,11 @@ export default OrganizationTypeAPI;
 export interface OrganizationTypeDTO {
   /** 机构类型ID */
   id?: number;
+  /** 类型唯一标识 */
+  code: string;
   /** 机构类型名称 */
   name: string;
-  /** 机构类型描述 */
+  /** 类型说明 */
   description?: string;
   /** 排序 */
   sort?: number;
