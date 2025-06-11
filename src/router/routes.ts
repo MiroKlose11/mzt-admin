@@ -59,4 +59,24 @@ export const contentRoutes = [
       hidden: true,
     },
   },
+  // 添加学员管理路由
+  {
+    path: "/student",
+    component: () => import("@/views/student/index.vue"),
+    name: "Student",
+    meta: {
+      title: "学员管理",
+      icon: "user-filled",
+    },
+  },
+  {
+    path: "/student/detail/:id",
+    component: () => import("@/views/student/detail.vue"),
+    name: "StudentDetail",
+    meta: {
+      title: "学员详情",
+      icon: "user-filled",
+      hidden: true,
+    },
+  },
 ];

@@ -176,6 +176,8 @@ export interface MemberDTO {
   organization?: string;
   /** 职业所在地ID */
   cityId?: number;
+  /** 职业所在地名称 */
+  cityName?: string;
   /** 个人简介 */
   introduction?: string;
   /** 状态 */

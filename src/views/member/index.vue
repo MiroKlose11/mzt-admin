@@ -200,8 +200,39 @@
             <el-radio :label="GenderEnum.UNKNOWN">未知</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="显示头衔">
-          <el-input v-model="form.titleText" placeholder="请输入显示头衔" />
+        <el-form-item label="角色">
+          <el-select
+            v-model="form.roleIds"
+            multiple
+            filterable
+            clearable
+            placeholder="请选择角色"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="role in roleList"
+              :key="role.id"
+              :label="role.name"
+              :value="role.id as number"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="头衔">
+          <el-select
+            v-model="form.titleIds"
+            multiple
+            filterable
+            clearable
+            placeholder="请选择头衔"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="title in titleList"
+              :key="title.id"
+              :label="title.name"
+              :value="title.id as number"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="所属机构">
           <el-select
@@ -226,6 +257,21 @@
             placeholder="请输入机构名称"
             style="margin-top: 8px"
           />
+        </el-form-item>
+        <el-form-item label="所在城市">
+          <el-cascader
+            v-model="selectedRegion"
+            :options="regionOptions"
+            :props="cascaderProps"
+            placeholder="请选择省/市/区"
+            style="width: 100%"
+            :loading="regionLoading"
+            clearable
+            @change="handleRegionChange"
+          />
+          <div v-if="form.cityName" style="margin-top: 5px; color: #666; font-size: 12px">
+            已选择: {{ form.cityName }} (ID: {{ form.cityId }})
+          </div>
         </el-form-item>
         <el-form-item label="个人简介">
           <el-input
@@ -417,6 +463,8 @@ import MemberAPI, {
 } from "@/api/member.api";
 import TitleAPI, { type TitleVO } from "@/api/title.api";
 import RoleAPI, { type RoleDTO, type RoleVO } from "@/api/role.api";
+import OrganizationAPI from "@/api/organization.api";
+import CityAPI from "@/api/city.api";
 import { getAccessToken } from "@/utils/auth";
 import { formatDateTime } from "@/utils/date";
 
@@ -447,12 +495,33 @@ const dialog = reactive({
   type: "add", // add: 新增, edit: 编辑
 });
 
+// 省市区数据
+const regionOptions = ref<any[]>([]);
+const regionLoading = ref(false);
+
+// 选中的省市区
+const selectedRegion = ref<any[]>([]);
+
+// 省市区级联选择器配置
+const cascaderProps = {
+  expandTrigger: "click" as const,
+  checkStrictly: false,
+  multiple: false,
+  emitPath: true,
+  lazy: false,
+  value: "id",
+  label: "name",
+  children: "children",
+};
+
 // 表单对象
 const formRef = ref();
 const form = reactive<MemberDTO>({
   name: "",
   gender: GenderEnum.UNKNOWN,
   status: MemberStatusEnum.ENABLED,
+  roleIds: [],
+  titleIds: [],
 });
 
 // 表单校验规则
@@ -522,6 +591,15 @@ const handleEdit = async (row: MemberVO) => {
   try {
     const memberDetail = await MemberAPI.getDetail(row.id!);
     Object.assign(form, memberDetail);
+
+    // 清空已选择的省市区
+    selectedRegion.value = [];
+
+    // 如果有城市ID，尝试匹配省市区
+    if (form.cityId && regionOptions.value.length > 0) {
+      matchRegionById(form.cityId);
+    }
+
     dialog.visible = true;
   } catch (error) {
     console.error("获取成员详情失败", error);
@@ -558,13 +636,15 @@ const resetForm = () => {
   form.name = "";
   form.avatar = "";
   form.gender = GenderEnum.UNKNOWN;
-  form.titleText = "";
   form.organization = "";
+  form.organizationId = undefined;
   form.cityId = undefined;
+  form.cityName = "";
   form.introduction = "";
   form.status = MemberStatusEnum.ENABLED;
   form.roleIds = [];
   form.titleIds = [];
+  selectedRegion.value = [];
 };
 
 // 头像上传成功回调
@@ -815,12 +895,146 @@ const getRoleList = async () => {
   }
 };
 
+// 获取省市区数据
+const getRegionData = async () => {
+  regionLoading.value = true;
+  try {
+    const result = await CityAPI.getList();
+    if (result && result.length > 0) {
+      console.log("后端返回的树状城市数据:", result);
+
+      // 直接使用后端返回的树状结构
+      regionOptions.value = result;
+    }
+  } catch (error) {
+    console.error("获取省市区数据失败", error);
+    ElMessage.error("获取省市区数据失败");
+  } finally {
+    regionLoading.value = false;
+  }
+};
+
+// 根据城市ID匹配省市区
+const matchRegionById = (cityId: number) => {
+  if (!cityId) return;
+
+  // 找到城市ID对应的完整路径
+  const findPath = (
+    nodes: any[],
+    targetId: number,
+    currentPath: number[] = []
+  ): number[] | null => {
+    for (const node of nodes) {
+      // 尝试当前节点
+      const path = [...currentPath, node.id];
+
+      // 找到目标
+      if (node.id === targetId) {
+        return path;
+      }
+
+      // 递归查找子节点
+      if (node.children && node.children.length > 0) {
+        const foundPath = findPath(node.children, targetId, path);
+        if (foundPath) {
+          return foundPath;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const path = findPath(regionOptions.value, cityId);
+  if (path) {
+    selectedRegion.value = path;
+  }
+};
+
+// 处理省市区选择变化
+const handleRegionChange = (val: any) => {
+  console.log("级联选择器值变化:", val);
+
+  // 清空之前的值
+  form.cityName = "";
+  form.cityId = undefined;
+
+  // 检查值是否有效
+  if (!val || !Array.isArray(val) || val.length === 0) {
+    return;
+  }
+
+  try {
+    // 获取省市区的完整路径名称
+    const labels: string[] = [];
+    const ids: number[] = [];
+
+    // 递归查找节点
+    const findNodePath = (id: number, nodes: any[]): boolean => {
+      for (const node of nodes) {
+        if (node.id === id) {
+          labels.push(node.name);
+          ids.push(node.id);
+          return true;
+        }
+
+        if (node.children && node.children.length > 0) {
+          if (findNodePath(id, node.children)) {
+            labels.unshift(node.name);
+            ids.unshift(node.id);
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    // 查找最后一级的完整路径
+    const lastId = Number(val[val.length - 1]);
+    if (!isNaN(lastId)) {
+      findNodePath(lastId, regionOptions.value);
+
+      // 设置城市名称和ID
+      if (labels.length > 0) {
+        form.cityName = labels.join("-");
+        form.cityId = lastId;
+      }
+
+      console.log("选择的区域:", {
+        cityId: form.cityId,
+        cityName: form.cityName,
+        path: ids,
+      });
+    }
+  } catch (error) {
+    console.error("处理区域选择出错:", error);
+  }
+};
+
 // 初始化
 onMounted(() => {
   getMemberList();
   getTitleList();
   getRoleList();
+  getOrganizationList();
+  getRegionData();
 });
+
+// 获取所有机构列表
+const getOrganizationList = async () => {
+  try {
+    const result = await OrganizationAPI.getList();
+    if (result && result.length > 0) {
+      organizationList.value = result.map((org) => ({
+        id: org.id!,
+        name: org.name,
+      }));
+    }
+  } catch (error) {
+    console.error("获取机构列表失败", error);
+    ElMessage.error("获取机构列表失败");
+  }
+};
 </script>
 
 <style scoped>
