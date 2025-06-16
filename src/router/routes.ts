@@ -79,4 +79,24 @@ export const contentRoutes = [
       hidden: true,
     },
   },
+  // 添加课程管理路由
+  {
+    path: "/course",
+    component: () => import("@/views/course/index.vue"),
+    name: "Course",
+    meta: {
+      title: "课程管理",
+      icon: "reading",
+    },
+  },
+  {
+    path: "/course/detail/:id",
+    component: () => import("@/views/course/detail.vue"),
+    name: "CourseDetail",
+    meta: {
+      title: "课程详情",
+      icon: "reading",
+      hidden: true,
+    },
+  },
 ];
