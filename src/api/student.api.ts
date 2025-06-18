@@ -112,6 +112,8 @@ export interface StudentQuery {
   name?: string;
   /** 状态 */
   status?: StudentStatusEnum;
+  /** 用户ID */
+  userId?: number;
 }
 
 /**
@@ -150,6 +152,8 @@ export interface StudentDTO {
   organizationName?: string;
   /** 状态 */
   status?: StudentStatusEnum;
+  /** 用户ID */
+  userId?: number;
 }
 
 /**

@@ -195,9 +195,9 @@
         </el-form-item>
         <el-form-item label="性别">
           <el-radio-group v-model="form.gender">
-            <el-radio :label="GenderEnum.MALE">男</el-radio>
-            <el-radio :label="GenderEnum.FEMALE">女</el-radio>
-            <el-radio :label="GenderEnum.UNKNOWN">未知</el-radio>
+            <el-radio :value="GenderEnum.MALE">男</el-radio>
+            <el-radio :value="GenderEnum.FEMALE">女</el-radio>
+            <el-radio :value="GenderEnum.UNKNOWN">未知</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="角色">
@@ -283,8 +283,8 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-radio-group v-model="form.status">
-            <el-radio :label="MemberStatusEnum.ENABLED">启用</el-radio>
-            <el-radio :label="MemberStatusEnum.DISABLED">禁用</el-radio>
+            <el-radio :value="MemberStatusEnum.ENABLED">启用</el-radio>
+            <el-radio :value="MemberStatusEnum.DISABLED">禁用</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>

@@ -41,6 +41,9 @@
         <el-descriptions-item label="更新时间">
           {{ formatDateTime(studentInfo.updatedAt) || "-" }}
         </el-descriptions-item>
+        <el-descriptions-item label="用户ID">
+          {{ studentInfo.userId || "未绑定" }}
+        </el-descriptions-item>
         <el-descriptions-item label="个性签名" :span="2">
           {{ studentInfo.signature || "-" }}
         </el-descriptions-item>

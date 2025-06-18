@@ -1,5 +1,6 @@
 import type { App } from "vue";
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from "vue-router";
+// import { contentRoutes } from "./routes";
 
 export const Layout = () => import("@/layout/index.vue");
 
@@ -33,6 +34,101 @@ export const constantRoutes: RouteRecordRaw[] = [
         meta: {
           title: "个人中心",
           icon: "profile",
+        },
+      },
+    ],
+  },
+  {
+    path: "/member",
+    component: Layout,
+    meta: { hidden: true },
+    children: [
+      {
+        path: "",
+        component: () => import("@/views/member/index.vue"),
+        name: "MemberList",
+        meta: {
+          title: "成员管理",
+          icon: "user",
+          keepAlive: true,
+        },
+      },
+      {
+        path: "detail/:id",
+        component: () => import("@/views/member/detail.vue"),
+        name: "MemberDetail",
+        meta: {
+          title: "成员详情",
+          icon: "user",
+          hidden: true,
+          activeMenu: "/member",
+        },
+      },
+      {
+        path: "edit/:id?",
+        component: () => import("@/views/member/edit.vue"),
+        name: "MemberEdit",
+        meta: {
+          title: "编辑成员",
+          icon: "edit",
+          hidden: true,
+          activeMenu: "/member",
+        },
+      },
+    ],
+  },
+  {
+    path: "/student",
+    component: Layout,
+    meta: { hidden: true },
+    children: [
+      {
+        path: "",
+        component: () => import("@/views/student/index.vue"),
+        name: "StudentList",
+        meta: {
+          title: "学员管理",
+          icon: "user-filled",
+          keepAlive: true,
+        },
+      },
+      {
+        path: "detail/:id",
+        component: () => import("@/views/student/detail.vue"),
+        name: "StudentDetail",
+        meta: {
+          title: "学员详情",
+          icon: "user-filled",
+          hidden: true,
+          activeMenu: "/student",
+        },
+      },
+    ],
+  },
+  {
+    path: "/course",
+    component: Layout,
+    meta: { hidden: true },
+    children: [
+      {
+        path: "",
+        component: () => import("@/views/course/index.vue"),
+        name: "CourseList",
+        meta: {
+          title: "课程管理",
+          icon: "reading",
+          keepAlive: true,
+        },
+      },
+      {
+        path: "detail/:id",
+        component: () => import("@/views/course/detail.vue"),
+        name: "CourseDetail",
+        meta: {
+          title: "课程详情",
+          icon: "reading",
+          hidden: true,
+          activeMenu: "/course",
         },
       },
     ],

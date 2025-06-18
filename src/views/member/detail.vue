@@ -66,6 +66,9 @@
               <el-descriptions-item label="ID">
                 {{ member.id }}
               </el-descriptions-item>
+              <el-descriptions-item label="用户ID">
+                {{ member.userId || "未绑定" }}
+              </el-descriptions-item>
               <el-descriptions-item label="角色" :span="2">
                 <el-tag
                   v-for="role in member.roles"

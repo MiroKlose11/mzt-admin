@@ -100,6 +100,8 @@ export interface MemberQuery {
   name?: string;
   /** 状态 */
   status?: MemberStatusEnum;
+  /** 用户ID */
+  userId?: number;
 }
 
 /**
@@ -186,6 +188,8 @@ export interface MemberDTO {
   roleIds?: number[];
   /** 头衔ID列表 */
   titleIds?: number[];
+  /** 用户ID */
+  userId?: number;
 }
 
 /**
