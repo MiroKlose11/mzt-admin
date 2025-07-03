@@ -12,6 +12,7 @@
       :accept="props.accept"
       :limit="props.limit"
       multiple
+      :show-file-list="false"
     >
       <!-- 上传文件按钮 -->
       <el-button type="primary" :disabled="fileList.length >= props.limit">
@@ -48,7 +49,6 @@ import {
   UploadFile,
   UploadFiles,
   UploadProgressEvent,
-  UploadRequestOptions,
 } from "element-plus";
 
 import FileAPI, { FileInfo } from "@/api/file.api";
@@ -110,6 +110,14 @@ const props = defineProps({
       };
     },
   },
+
+  /**
+   * 上传目录
+   */
+  directory: {
+    type: String,
+    default: undefined,
+  },
 });
 
 const modelValue = defineModel("modelValue", {
@@ -154,30 +162,22 @@ function handleBeforeUpload(file: UploadRawFile) {
   return true;
 }
 
-/*
- * 上传文件
+/**
+ * 上传文件（支持业务目录参数）
  */
-function handleUpload(options: UploadRequestOptions) {
-  return new Promise((resolve, reject) => {
-    const file = options.file;
-
-    const formData = new FormData();
-    formData.append(props.name, file);
-
-    // 处理附加参数
-    Object.keys(props.data).forEach((key) => {
-      formData.append(key, props.data[key]);
-    });
-
-    FileAPI.upload(formData)
-      .then((data) => {
-        resolve(data);
-      })
-      .catch((error) => {
-        reject(error);
-      });
-  });
-}
+const handleUpload = async (options: any) => {
+  // 目录优先级：props.data.directory > props.directory > 默认
+  const directory = props.data?.directory || props.directory || "others/";
+  try {
+    const res = await FileAPI.uploadToCOS(options.file, directory);
+    // 兼容 el-upload 的 onSuccess 回调
+    options.onSuccess && options.onSuccess(res, options.file);
+    return res;
+  } catch (error) {
+    options.onError && options.onError(error);
+    throw error;
+  }
+};
 
 /**
  * 上传进度

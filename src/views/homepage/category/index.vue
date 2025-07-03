@@ -12,10 +12,10 @@
         <el-form-item label="分类类型" prop="type">
           <el-select v-model="queryParams.type" clearable placeholder="全部" style="width: 180px">
             <el-option
-              v-for="(label, value) in categoryTypeMap"
-              :key="value"
-              :value="value"
-              :label="label"
+              v-for="item in categoryTypeList"
+              :key="item.value"
+              :value="item.value"
+              :label="item.label"
             />
           </el-select>
         </el-form-item>
@@ -86,7 +86,7 @@
         </el-table-column>
         <el-table-column align="center" label="分类类型" min-width="150">
           <template #default="scope">
-            {{ categoryTypeMap[scope.row.categoryType] || scope.row.categoryType }}
+            {{ getCategoryTypeLabel(scope.row.categoryType) }}
           </template>
         </el-table-column>
         <el-table-column align="center" label="描述" prop="description" min-width="180" />
@@ -156,10 +156,10 @@
             filterable
           >
             <el-option
-              v-for="(label, value) in categoryTypeMap"
-              :key="value"
-              :value="value"
-              :label="label"
+              v-for="item in categoryTypeList"
+              :key="item.value"
+              :value="item.value"
+              :label="item.label"
             />
           </el-select>
         </el-form-item>
@@ -204,12 +204,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-import CategoryAPI, {
-  CategoryItem,
-  CategoryForm,
-  categoryTypeMap,
-  categoryTypePriority,
-} from "@/api/index/category.api";
+import CategoryAPI, { CategoryItem, CategoryForm } from "@/api/index/category.api";
 import type { FormInstance } from "element-plus";
 import SingleImageUpload from "@/components/Upload/SingleImageUpload.vue";
 
@@ -233,6 +228,17 @@ const queryParams = reactive({
 // 所有分类数据
 const allData = ref<CategoryItem[]>([]);
 
+// 分类类型列表（后端获取）
+const categoryTypeList = ref<Array<{ label: string; value: string }>>([]);
+
+// 分类类型label映射
+function getCategoryTypeLabel(type: string) {
+  const found = categoryTypeList.value.find((item) => item.value === type);
+  return found ? found.label : type;
+}
+
+defineExpose({ getCategoryTypeLabel });
+
 // 筛选后的数据
 const filteredData = computed(() => {
   return allData.value.filter((item) => {
@@ -251,15 +257,10 @@ const filteredData = computed(() => {
 // 排序后的数据
 const sortedData = computed(() => {
   return [...filteredData.value].sort((a, b) => {
-    // 首先按categoryType优先级排序
-    const typeA = categoryTypePriority[a.categoryType] || 999;
-    const typeB = categoryTypePriority[b.categoryType] || 999;
-
-    if (typeA !== typeB) {
-      return typeA - typeB;
-    }
-
-    // 然后在相同categoryType内按sort排序
+    // 先按分类类型字符串排序
+    if (a.categoryType < b.categoryType) return -1;
+    if (a.categoryType > b.categoryType) return 1;
+    // 分类类型相同，再按sort字段升序
     return (a.sort || 0) - (b.sort || 0);
   });
 });
@@ -319,11 +320,12 @@ const formData = reactive<CategoryForm>({
 const rules = reactive({
   name: [{ required: true, message: "请输入分类名称", trigger: "blur" }],
   categoryType: [{ required: true, message: "请选择分类类型", trigger: "change" }],
-  icon: [{ required: true, message: "请上传分类图片", trigger: "change" }],
+  // icon: [{ required: true, message: "请上传分类图片", trigger: "change" }], // 改为非必填
 });
 
 // 初始化加载数据
 onMounted(() => {
+  loadCategoryTypes();
   loadData();
 });
 
@@ -344,6 +346,28 @@ function loadData() {
     .finally(() => {
       loading.value = false;
     });
+}
+
+// 加载分类类型
+function loadCategoryTypes() {
+  CategoryAPI.getTypes().then((res) => {
+    if (
+      Array.isArray(res) &&
+      res.length > 0 &&
+      typeof res[0] === "object" &&
+      res[0] !== null &&
+      "label" in res[0] &&
+      "value" in res[0]
+    ) {
+      // 对象数组，直接赋值
+      categoryTypeList.value = res as unknown as Array<{ label: string; value: string }>;
+    } else if (Array.isArray(res) && res.length > 0 && res.every((v) => typeof v === "string")) {
+      // 字符串数组，转成对象数组
+      categoryTypeList.value = (res as string[]).map((v) => ({ label: v, value: v }));
+    } else {
+      categoryTypeList.value = [];
+    }
+  });
 }
 
 // 监听筛选条件变化，重新计算总数和当前页
